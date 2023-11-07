@@ -1,0 +1,88 @@
+---
+pipeline:
+  projectIdentifier: "default_project"
+  orgIdentifier: "default"
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: "account.CIPHERTron"
+        repoName: "harness-ci-js"
+        build: "<+input>"
+  stages:
+  - stage:
+      name: "build"
+      identifier: "build"
+      type: "CI"
+      spec:
+        cloneCodebase: true
+        platform:
+          os: "Linux"
+          arch: "Amd64"
+        runtime:
+          type: "Cloud"
+          spec: {}
+        execution:
+          steps:
+          - step:
+              type: "Run"
+              identifier: "build_javascript_app"
+              name: "Build JavaScript App"
+              spec:
+                shell: "Sh"
+                command: "echo \"Welcome to Harness CI\"\necho <+pipeline.name>_<+pipeline.executionId>\n\
+                  \nnode --version\nnpm install\nnpm run build --if-present"
+          - step:
+              type: "BuildAndPushDockerRegistry"
+              name: "BuildAndPushDockerRegistry_1"
+              identifier: "BuildAndPushDockerRegistry_1"
+              spec:
+                connectorRef: "account.Pritish_Harness"
+                repo: "pritishharness/harness_test"
+                tags:
+                - "<+pipeline.name>_<+pipeline.executionId>"
+  - stage:
+      name: "deploy"
+      identifier: "deploy"
+      description: ""
+      type: "Deployment"
+      spec:
+        deploymentType: "Kubernetes"
+        service:
+          serviceRef: "global_service"
+          serviceInputs:
+            serviceDefinition:
+              type: "Kubernetes"
+              spec:
+                variables:
+                - name: "ip"
+                  type: "String"
+                  value: "<+input>"
+                - name: "port"
+                  type: "String"
+                  value: "<+input>"
+        environment:
+          environmentRef: "local"
+          deployToAll: false
+          infrastructureDefinitions:
+          - identifier: "local_infra"
+        execution:
+          steps:
+          - step:
+              type: "K8sRollingDeploy"
+              name: "K8sRollingDeploy_1"
+              identifier: "K8sRollingDeploy_1"
+              spec:
+                skipDryRun: false
+                pruningEnabled: false
+              timeout: "10m"
+          rollbackSteps: []
+      tags: {}
+      failureStrategies:
+      - onFailure:
+          errors:
+          - "AllErrors"
+          action:
+            type: "Ignore"
+  identifier: "cidemogitremote"
+  name: "ci-demo-git-remote"
