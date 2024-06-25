@@ -1,0 +1,31 @@
+inputSet:
+  name: test
+  identifier: test
+  orgIdentifier: default
+  projectIdentifier: default_project
+  pipeline:
+    identifier: cidemogitremote
+    properties:
+      ci:
+        codebase:
+          build:
+            type: PR
+            spec:
+              number: <+trigger.prNumber>
+    stages:
+      - stage:
+          identifier: deploy
+          type: Deployment
+          spec:
+            service:
+              serviceInputs:
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    variables:
+                      - name: ip
+                        type: String
+                        value: test
+                      - name: port
+                        type: String
+                        value: rtest
